@@ -5,7 +5,7 @@
 ## Login   <mestag_a@epitech.net>
 ## 
 ## Started on  Fri Oct  9 13:45:01 2015 alexis mestag
-## Last update Fri Oct  9 16:55:17 2015 alexis mestag
+## Last update Sat Oct 10 02:15:37 2015 alexis mestag
 ##
 
 NAME = kernel.elf
@@ -30,7 +30,7 @@ all:	$(NAME)
 $(NAME):	$(OBJ)
 		gcc -o $(NAME) $(OBJ) $(LDFLAGS)
 
-QEMU_PARAMS =	-kernel $(NAME) -m 1G -monitor stdio
+QEMU_PARAMS =	-kernel $(NAME) -m 1G -serial stdio
 
 boot:	all
 	qemu-system-i386 $(QEMU_PARAMS)

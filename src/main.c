@@ -5,84 +5,96 @@
 ** Login   <mestag_a@epitech.net>
 ** 
 ** Started on  Fri Oct  9 13:40:50 2015 alexis mestag
-** Last update Fri Oct  9 17:12:15 2015 alexis mestag
+** Last update Sat Oct 10 02:30:08 2015 alexis mestag
 */
 
 typedef	unsigned char	uint8_t;
 typedef	unsigned short	uint16_t;
 
-struct vga_text_char {
-  uint16_t ascii_code		: 8;
-  uint16_t fg_color_rgb		: 3;
-  uint16_t fg_color_intensity	: 1;
-  uint16_t bg_color_rgb		: 3;
-  uint16_t bg_color_intensity	: 1;
+struct		vga_text_char {
+  uint16_t	ascii_code		: 8;
+  uint16_t	fg_color_rgb		: 3;
+  uint16_t	fg_color_intensity	: 1;
+  uint16_t	bg_color_rgb		: 3;
+  uint16_t	bg_color_intensity	: 1;
 } __attribute__((packed));
 
-void	outw(unsigned short val, unsigned short port) {
-  asm volatile("outb %w0, %w1\n\t" :  : "a" (val), "d" (port));
+struct		uint16_s {
+  uint8_t	low;
+  uint8_t	high;
+} __attribute__((packed));
+
+/*
+** Union to avoid bitwise operations
+*/
+union		cursor {
+  uint16_t		offset;
+  struct uint16_s	bytes;
+};
+
+void	outb(uint8_t value, uint16_t port) {
+  asm volatile("outb %0, %1\n\t" :  : "a" (value), "d" (port));
 }
 
-uint8_t	inb(unsigned short port) {
-  uint8_t	res;
+uint8_t	inb(uint16_t port) {
+  uint8_t	value;
 
-  asm volatile("inb %w1, %0\n\t" : "=a" (res) : "Nd" (port));
-  return (res);
-}
-
-void	enable_cursor() {
-  outb(0x3d4, 0xa);
-  char curstart = inb(0x3d5) & 0x1F;
-
-  outb(0x3d4, 0xa);
-  outb(0x3d5, curstart | 0x20);
+  asm volatile("inb %1, %0\n\t" : "=a" (value) : "d" (port));
+  return (value);
 }
 
 uint16_t	get_cursor() {
-  uint16_t	low = 0, high = 0, ret = 0;
+  union cursor	c;
 
-  outb(0x3D4, 0x0F);
-  high = inb(0x3D5);
-  outb(0x3D4, 0x0E);
-  low = inb(0x3D5);
-
-  ret = (high << 8) | low;
-  return (ret); 
+  outb(0x0f, 0x3d4);
+  c.bytes.low = inb(0x3d5);
+  outb(0x0e, 0x3d4);
+  c.bytes.high = inb(0x3d5);
+  return (c.offset);
 }
 
 void	update_cursor(int row, int col) {
-  uint16_t	pos = row * 80 + col;
+  union cursor	c = {.offset = row * 80 + col };
 
-  outb(0x3D4, 0x0F);
-  outb(0x3D5, (uint8_t) (pos & 0xFF));
-
-  outb(0x3D4, 0x0E);
-  outb(0x3D5, (uint8_t) ((pos >> 8) & 0xFF));
+  outb(0x0f, 0x3d4);
+  outb(c.bytes.low, 0x3d5);
+  outb(0x0e, 0x3d4);
+  outb(c.bytes.high, 0x3d5);
 }
 
 void	printk(const char *msg) {
   struct vga_text_char	*vga = (void *) 0xb8000;
-
-  /* get cursor pos */
   uint16_t		offset = get_cursor();
-
   struct vga_text_char	*vga_begin = vga + offset;
+
   for(int i = 0; msg[i]; ++i) {
     vga_begin[i].ascii_code = msg[i];
     offset++;
+    /* switch (msg[i]) { */
+    /* case '\b': */
+    /*   break; */
+    /* case '\t': */
+    /*   break; */
+    /* case '\n': */
+    /*   break; */
+    /* case '\v': */
+    /*   break; */
+    /* case '\f': */
+    /*   break; */
+    /* case '\r': */
+    /*   break; */
+    /* default: */
+    /*   vga_begin[i].ascii_code = msg[i]; */
+    /*   offset++; */
+    /*   break; */
+    /* } */    
   }
 
-  /* set cursor pos */
-  uint16_t	row = offset / 80, col = offset % 80;
+  uint16_t		row = offset / 80, col = offset % 80;
   update_cursor(row, col);
-  /* offset = get_cursor(); */
 }
 
-int	main() {
-  enable_cursor();
-  /* outb(0x3D4, 0x0A); */
-  /* outb(0x3D5, 0x00); */
-  printk("Yolo");
-  printk("Bitch");
+int		main() {
+  printk("Hello World!");
   return (0);
 }

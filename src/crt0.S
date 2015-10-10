@@ -7,11 +7,11 @@
 	.long            FLAGS
 	.long            -(MAGIC + FLAGS)
 
-.section .text   /* multiboot info */
-.global _start   /* magic */
-_start:	          /* kernel entry point */
-	push %ebx
-	push %eax
-	call main
+.section .text
+.global _start
+_start:
+	push %ebx   /* multiboot info */
+	push %eax   /* magic */
+	call main   /* kernel entry point */
 	hlt
 	
